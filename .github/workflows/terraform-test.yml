@@ -19,7 +19,7 @@ on:
   workflow_dispatch:
 
 env:
-  TERRAFORM_VERSION: "1.7.0"
+  TERRAFORM_VERSION: "1.9.0"
   ARM_USE_OIDC: true
   ARM_USE_AZUREAD: true
 
