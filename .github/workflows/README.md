@@ -8,9 +8,8 @@ This repository uses a **modular workflow architecture** with reusable workflows
 
 ```
 .github/workflows/
-├── terraform-ci-scalable.yml  # 🎯 Main scalable pipeline (USE THIS)
-├── terraform-test.yml         # Legacy workflow (can be archived)
-├── main-pipeline.yml          # Alternative main pipeline
+├── terraform-ci-scalable.yml  # 🎯 Main CI/CD pipeline
+├── README.md                  # This documentation
 └── template/                  # 📁 Workflow templates
     ├── validate-module.yml    # ✅ Module validation
     ├── test-example.yml       # 🧪 Example testing
