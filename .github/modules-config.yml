@@ -2,12 +2,6 @@
 # This file defines all modules and their examples for automated testing
 
 modules:
-  - name: terraform-azurerm-avm-res-storage-storageaccount-main
-    enabled: true
-    has_unit_tests: false
-    examples:
-      - default
-
   - name: terraform-azurerm-avm-res-keyvault-vault-main
     enabled: true
     has_unit_tests: true
