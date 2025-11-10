@@ -242,6 +242,10 @@ jobs:
         with:
           terraform_version: ${{ env.TERRAFORM_VERSION }}
 
+      - name: Terraform Init
+        working-directory: ./modules/${{ matrix.module }}
+        run: terraform init -backend=false
+
       - name: Run Terraform Tests
         working-directory: ./modules/${{ matrix.module }}
         run: terraform test -verbose
