@@ -36,6 +36,8 @@ jobs:
       matrix:
         module:
           - terraform-azurerm-avm-res-storage-storageaccount-main
+          - terraform-azurerm-avm-res-keyvault-vault-main
+      fail-fast: false
 
     steps:
       - name: Checkout code
@@ -90,18 +92,43 @@ jobs:
     needs: terraform-validate
     strategy:
       matrix:
-        example:
-          - default
-          - customer-managed-key
-          - data_lake_gen2
-          - diagnostic-settings
-          - local_user
-          - management-policy
-          - private-endpoint-basic
-          - private-endpoint-manage_dns_zone_group
-          - private-endpoint-static-ip
-          - private-endpoint-unmanage_dns_zone_group
-          - role_assignments
+        include:
+          # Storage Account Examples
+          - module: terraform-azurerm-avm-res-storage-storageaccount-main
+            example: default
+          - module: terraform-azurerm-avm-res-storage-storageaccount-main
+            example: customer-managed-key
+          - module: terraform-azurerm-avm-res-storage-storageaccount-main
+            example: data_lake_gen2
+          - module: terraform-azurerm-avm-res-storage-storageaccount-main
+            example: diagnostic-settings
+          - module: terraform-azurerm-avm-res-storage-storageaccount-main
+            example: local_user
+          - module: terraform-azurerm-avm-res-storage-storageaccount-main
+            example: management-policy
+          - module: terraform-azurerm-avm-res-storage-storageaccount-main
+            example: private-endpoint-basic
+          - module: terraform-azurerm-avm-res-storage-storageaccount-main
+            example: private-endpoint-manage_dns_zone_group
+          - module: terraform-azurerm-avm-res-storage-storageaccount-main
+            example: private-endpoint-static-ip
+          - module: terraform-azurerm-avm-res-storage-storageaccount-main
+            example: private-endpoint-unmanage_dns_zone_group
+          - module: terraform-azurerm-avm-res-storage-storageaccount-main
+            example: role_assignments
+          # Key Vault Examples
+          - module: terraform-azurerm-avm-res-keyvault-vault-main
+            example: default
+          - module: terraform-azurerm-avm-res-keyvault-vault-main
+            example: access-policies
+          - module: terraform-azurerm-avm-res-keyvault-vault-main
+            example: create-key
+          - module: terraform-azurerm-avm-res-keyvault-vault-main
+            example: create-secret
+          - module: terraform-azurerm-avm-res-keyvault-vault-main
+            example: diagnostic-settings
+          - module: terraform-azurerm-avm-res-keyvault-vault-main
+            example: private-endpoint
       fail-fast: false
 
     steps:
@@ -121,7 +148,7 @@ jobs:
           terraform_version: ${{ env.TERRAFORM_VERSION }}
 
       - name: Terraform Init - Example
-        working-directory: ./modules/terraform-azurerm-avm-res-storage-storageaccount-main/examples/${{ matrix.example }}
+        working-directory: ./modules/${{ matrix.module }}/examples/${{ matrix.example }}
         run: terraform init -backend=false
         env:
           ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
@@ -129,7 +156,7 @@ jobs:
           ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
 
       - name: Terraform Validate - Example
-        working-directory: ./modules/terraform-azurerm-avm-res-storage-storageaccount-main/examples/${{ matrix.example }}
+        working-directory: ./modules/${{ matrix.module }}/examples/${{ matrix.example }}
         run: terraform validate -no-color
         env:
           ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
@@ -137,7 +164,7 @@ jobs:
           ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
 
       - name: Terraform Plan - Example
-        working-directory: ./modules/terraform-azurerm-avm-res-storage-storageaccount-main/examples/${{ matrix.example }}
+        working-directory: ./modules/${{ matrix.module }}/examples/${{ matrix.example }}
         run: terraform plan -no-color
         continue-on-error: true
         env:
@@ -148,6 +175,12 @@ jobs:
   tflint:
     name: TFLint
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        module:
+          - terraform-azurerm-avm-res-storage-storageaccount-main
+          - terraform-azurerm-avm-res-keyvault-vault-main
+      fail-fast: false
 
     steps:
       - name: Checkout code
@@ -162,16 +195,22 @@ jobs:
         run: tflint --version
 
       - name: Init TFLint
-        working-directory: ./modules/terraform-azurerm-avm-res-storage-storageaccount-main
+        working-directory: ./modules/${{ matrix.module }}
         run: tflint --init
 
       - name: Run TFLint
-        working-directory: ./modules/terraform-azurerm-avm-res-storage-storageaccount-main
+        working-directory: ./modules/${{ matrix.module }}
         run: tflint --recursive --format compact
 
   terraform-docs:
     name: Generate Documentation
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        module:
+          - terraform-azurerm-avm-res-storage-storageaccount-main
+          - terraform-azurerm-avm-res-keyvault-vault-main
+      fail-fast: false
 
     steps:
       - name: Checkout code
@@ -180,7 +219,7 @@ jobs:
       - name: Render terraform docs
         uses: terraform-docs/gh-actions@v1.2.0
         with:
-          working-dir: ./modules/terraform-azurerm-avm-res-storage-storageaccount-main
+          working-dir: ./modules/${{ matrix.module }}
           output-file: README.md
           output-method: inject
           git-push: false
