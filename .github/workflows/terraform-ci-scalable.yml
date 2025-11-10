@@ -55,7 +55,7 @@ jobs:
           echo "Modules to test: $MODULES"
 
           # Extract all module-example combinations
-          EXAMPLES=$(yq eval '.modules[] | select(.enabled == true) | .examples[] as $ex | {"module": .name, "example": $ex}' .github/modules-config.yml | jq -s -c '.')
+          EXAMPLES=$(yq eval -o=json '.modules[] | select(.enabled == true) | .examples[] as $ex | {"module": .name, "example": $ex}' .github/modules-config.yml | jq -s -c '.')
           echo "examples=$EXAMPLES" >> $GITHUB_OUTPUT
           echo "Examples to test: $EXAMPLES"
 
