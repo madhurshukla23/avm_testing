@@ -219,8 +219,53 @@ jobs:
         run: |
           echo "## Terraform CI Summary" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "✅ Terraform validation completed" >> $GITHUB_STEP_SUMMARY
-          echo "✅ Example validation completed" >> $GITHUB_STEP_SUMMARY
-          echo "✅ Linting completed" >> $GITHUB_STEP_SUMMARY
-          echo "✅ Security scan completed" >> $GITHUB_STEP_SUMMARY
-          echo "✅ Documentation check completed" >> $GITHUB_STEP_SUMMARY
+
+          # Terraform Validate Status
+          if [ "${{ needs.terraform-validate.result }}" == "success" ]; then
+            echo "✅ Terraform validation completed successfully" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ Terraform validation failed" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          # Terraform Examples Status
+          if [ "${{ needs.terraform-examples.result }}" == "success" ]; then
+            echo "✅ Example validation completed successfully" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ Example validation failed" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          # TFLint Status
+          if [ "${{ needs.tflint.result }}" == "success" ]; then
+            echo "✅ Linting completed successfully" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ Linting failed" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          # TFSec Status
+          if [ "${{ needs.tfsec.result }}" == "success" ]; then
+            echo "✅ Security scan completed successfully" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ Security scan failed" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          # Terraform Docs Status
+          if [ "${{ needs.terraform-docs.result }}" == "success" ]; then
+            echo "✅ Documentation check completed successfully" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ Documentation check failed" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          # Overall Status
+          if [ "${{ needs.terraform-validate.result }}" == "success" ] && \
+             [ "${{ needs.terraform-examples.result }}" == "success" ] && \
+             [ "${{ needs.tflint.result }}" == "success" ] && \
+             [ "${{ needs.tfsec.result }}" == "success" ] && \
+             [ "${{ needs.terraform-docs.result }}" == "success" ]; then
+            echo "### 🎉 All checks passed!" >> $GITHUB_STEP_SUMMARY
+            exit 0
+          else
+            echo "### ⚠️ Some checks failed - please review the logs above" >> $GITHUB_STEP_SUMMARY
+            exit 1
+          fi
