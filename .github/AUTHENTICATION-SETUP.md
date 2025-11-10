@@ -613,6 +613,7 @@ az storage blob list \
   --output table
 ```
 
+![alt text](image.png)
 ---
 
 **Document Version:** 1.0  
