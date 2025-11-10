@@ -63,11 +63,19 @@ jobs:
         id: init
         working-directory: ./modules/${{ matrix.module }}
         run: terraform init -backend=false
+        env:
+          ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+          ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
 
       - name: Terraform Validate
         id: validate
         working-directory: ./modules/${{ matrix.module }}
         run: terraform validate -no-color
+        env:
+          ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+          ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
 
       - name: Format Check Results
         if: steps.fmt.outcome == 'failure'
@@ -115,15 +123,27 @@ jobs:
       - name: Terraform Init - Example
         working-directory: ./modules/terraform-azurerm-avm-res-storage-storageaccount-main/examples/${{ matrix.example }}
         run: terraform init -backend=false
+        env:
+          ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+          ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
 
       - name: Terraform Validate - Example
         working-directory: ./modules/terraform-azurerm-avm-res-storage-storageaccount-main/examples/${{ matrix.example }}
         run: terraform validate -no-color
+        env:
+          ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+          ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
 
       - name: Terraform Plan - Example
         working-directory: ./modules/terraform-azurerm-avm-res-storage-storageaccount-main/examples/${{ matrix.example }}
         run: terraform plan -no-color
         continue-on-error: true
+        env:
+          ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+          ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
 
   tflint:
     name: TFLint
