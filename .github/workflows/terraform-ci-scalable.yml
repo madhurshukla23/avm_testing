@@ -75,7 +75,7 @@ jobs:
       matrix:
         module: ${{ fromJson(needs.setup.outputs.modules) }}
       fail-fast: false
-    uses: ./.github/workflows/template/validate-module.yml
+    uses: ./.github/workflows/validate-module.yml
     with:
       module_name: ${{ matrix.module }}
       terraform_version: "1.9.0"
@@ -95,7 +95,7 @@ jobs:
       matrix:
         include: ${{ fromJson(needs.setup.outputs.examples) }}
       fail-fast: false
-    uses: ./.github/workflows/template/test-example.yml
+    uses: ./.github/workflows/test-example.yml
     with:
       module_name: ${{ matrix.module }}
       example_name: ${{ matrix.example }}
@@ -116,7 +116,7 @@ jobs:
       matrix:
         module: ${{ fromJson(needs.setup.outputs.modules) }}
       fail-fast: false
-    uses: ./.github/workflows/template/lint-module.yml
+    uses: ./.github/workflows/lint-module.yml
     with:
       module_name: ${{ matrix.module }}
 
@@ -131,7 +131,7 @@ jobs:
       matrix:
         module: ${{ fromJson(needs.setup.outputs.modules) }}
       fail-fast: false
-    uses: ./.github/workflows/template/generate-docs.yml
+    uses: ./.github/workflows/generate-docs.yml
     with:
       module_name: ${{ matrix.module }}
 
@@ -146,7 +146,7 @@ jobs:
       matrix:
         module: ${{ fromJson(needs.setup.outputs.modules-with-tests) }}
       fail-fast: false
-    uses: ./.github/workflows/template/unit-tests.yml
+    uses: ./.github/workflows/unit-tests.yml
     with:
       module_name: ${{ matrix.module }}
       terraform_version: "1.9.0"
