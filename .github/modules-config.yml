@@ -12,7 +12,6 @@ modules:
       - diagnostic-settings
       - local_user
       - management-policy
-      - private-endpoint-basic
       - private-endpoint-manage_dns_zone_group
       - private-endpoint-static-ip
       - private-endpoint-unmanage_dns_zone_group
