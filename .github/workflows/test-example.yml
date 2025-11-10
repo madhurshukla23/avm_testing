@@ -71,8 +71,24 @@ jobs:
 
       - name: Terraform Plan
         working-directory: ./modules/${{ inputs.module_name }}/examples/${{ inputs.example_name }}
-        run: terraform plan -no-color
-        continue-on-error: true
+        run: terraform plan -out=tfplan -no-color
+        env:
+          ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+          ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+
+      - name: Terraform Apply
+        working-directory: ./modules/${{ inputs.module_name }}/examples/${{ inputs.example_name }}
+        run: terraform apply -auto-approve tfplan
+        env:
+          ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+          ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+
+      - name: Terraform Destroy
+        if: always()
+        working-directory: ./modules/${{ inputs.module_name }}/examples/${{ inputs.example_name }}
+        run: terraform destroy -auto-approve
         env:
           ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
           ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
