@@ -1,0 +1,44 @@
+name: Run Terraform Unit Tests
+
+on:
+  workflow_call:
+    inputs:
+      module_name:
+        required: true
+        type: string
+        description: "Name of the Terraform module to test"
+      terraform_version:
+        required: false
+        type: string
+        default: "1.9.0"
+        description: "Terraform version to use"
+
+jobs:
+  unit-tests:
+    name: Unit Tests - ${{ inputs.module_name }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ inputs.terraform_version }}
+
+      - name: Terraform Init
+        working-directory: ./modules/${{ inputs.module_name }}
+        run: terraform init -backend=false
+
+      - name: Run Terraform Tests
+        working-directory: ./modules/${{ inputs.module_name }}
+        run: terraform test -verbose
+        continue-on-error: true
+
+      - name: Upload Test Results
+        if: always()
+        run: |
+          echo "### Unit Test Results for ${{ inputs.module_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Unit tests executed. Check logs for details." >> $GITHUB_STEP_SUMMARY

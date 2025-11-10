@@ -1,0 +1,34 @@
+name: TFLint Code Quality
+
+on:
+  workflow_call:
+    inputs:
+      module_name:
+        required: true
+        type: string
+        description: "Name of the Terraform module to lint"
+
+jobs:
+  tflint:
+    name: Lint ${{ inputs.module_name }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup TFLint
+        uses: terraform-linters/setup-tflint@v4
+        with:
+          tflint_version: latest
+
+      - name: Show TFLint version
+        run: tflint --version
+
+      - name: Init TFLint
+        working-directory: ./modules/${{ inputs.module_name }}
+        run: tflint --init
+
+      - name: Run TFLint
+        working-directory: ./modules/${{ inputs.module_name }}
+        run: tflint --recursive --format compact

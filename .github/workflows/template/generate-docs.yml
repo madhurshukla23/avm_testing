@@ -1,0 +1,26 @@
+name: Generate Terraform Documentation
+
+on:
+  workflow_call:
+    inputs:
+      module_name:
+        required: true
+        type: string
+        description: "Name of the Terraform module to document"
+
+jobs:
+  terraform-docs:
+    name: Docs for ${{ inputs.module_name }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Render terraform docs
+        uses: terraform-docs/gh-actions@v1.2.0
+        with:
+          working-dir: ./modules/${{ inputs.module_name }}
+          output-file: README.md
+          output-method: inject
+          git-push: false

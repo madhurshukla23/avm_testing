@@ -1,0 +1,30 @@
+# Terraform Modules Configuration
+# This file defines all modules and their examples for automated testing
+
+modules:
+  - name: terraform-azurerm-avm-res-storage-storageaccount-main
+    enabled: true
+    has_unit_tests: false
+    examples:
+      - default
+      - customer-managed-key
+      - data_lake_gen2
+      - diagnostic-settings
+      - local_user
+      - management-policy
+      - private-endpoint-basic
+      - private-endpoint-manage_dns_zone_group
+      - private-endpoint-static-ip
+      - private-endpoint-unmanage_dns_zone_group
+      - role_assignments
+
+  - name: terraform-azurerm-avm-res-keyvault-vault-main
+    enabled: true
+    has_unit_tests: true
+    examples:
+      - default
+      - access-policies
+      - create-key
+      - create-secret
+      - diagnostic-settings
+      - private-endpoint

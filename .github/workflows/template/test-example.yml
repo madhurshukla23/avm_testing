@@ -1,0 +1,79 @@
+name: Test Terraform Examples
+
+on:
+  workflow_call:
+    inputs:
+      module_name:
+        required: true
+        type: string
+        description: "Name of the Terraform module"
+      example_name:
+        required: true
+        type: string
+        description: "Name of the example to test"
+      terraform_version:
+        required: false
+        type: string
+        default: "1.9.0"
+        description: "Terraform version to use"
+    secrets:
+      AZURE_CLIENT_ID:
+        required: true
+      AZURE_TENANT_ID:
+        required: true
+      AZURE_SUBSCRIPTION_ID:
+        required: true
+
+env:
+  ARM_USE_OIDC: true
+  ARM_USE_AZUREAD: true
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  test-example:
+    name: Test ${{ inputs.module_name }}/${{ inputs.example_name }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ inputs.terraform_version }}
+
+      - name: Terraform Init
+        working-directory: ./modules/${{ inputs.module_name }}/examples/${{ inputs.example_name }}
+        run: terraform init -backend=false
+        env:
+          ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+          ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+
+      - name: Terraform Validate
+        working-directory: ./modules/${{ inputs.module_name }}/examples/${{ inputs.example_name }}
+        run: terraform validate -no-color
+        env:
+          ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+          ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+
+      - name: Terraform Plan
+        working-directory: ./modules/${{ inputs.module_name }}/examples/${{ inputs.example_name }}
+        run: terraform plan -no-color
+        continue-on-error: true
+        env:
+          ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+          ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
