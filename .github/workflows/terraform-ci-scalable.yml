@@ -53,17 +53,17 @@ jobs:
 
           # Extract enabled modules
           $MODULES = (& "$env:TEMP\yq.exe" eval '.modules[] | select(.enabled == true) | .name' .github/modules-config.yml) -split "`n" | Where-Object { $_ } | ConvertTo-Json -Compress
-          echo "modules=$MODULES" >> $env:GITHUB_OUTPUT
+          "modules=$MODULES" >> $env:GITHUB_OUTPUT
           Write-Host "Modules to test: $MODULES"
 
           # Extract all module-example combinations
           $EXAMPLES = (& "$env:TEMP\yq.exe" eval -o=json '.modules[] | select(.enabled == true) | .examples[] as $ex | {"module": .name, "example": $ex}' .github/modules-config.yml | ConvertFrom-Json | ConvertTo-Json -Compress -AsArray)
-          echo "examples=$EXAMPLES" >> $env:GITHUB_OUTPUT
+          "examples=$EXAMPLES" >> $env:GITHUB_OUTPUT
           Write-Host "Examples to test: $EXAMPLES"
 
           # Extract modules with unit tests
           $MODULES_WITH_TESTS = (& "$env:TEMP\yq.exe" eval '.modules[] | select(.enabled == true and .has_unit_tests == true) | .name' .github/modules-config.yml) -split "`n" | Where-Object { $_ } | ConvertTo-Json -Compress
-          echo "modules-with-tests=$MODULES_WITH_TESTS" >> $env:GITHUB_OUTPUT
+          "modules-with-tests=$MODULES_WITH_TESTS" >> $env:GITHUB_OUTPUT
           Write-Host "Modules with unit tests: $MODULES_WITH_TESTS"
 
   # ============================================
