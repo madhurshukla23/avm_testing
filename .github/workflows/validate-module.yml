@@ -31,7 +31,7 @@ permissions:
 jobs:
   validate:
     name: Validate ${{ inputs.module_name }}
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, windows]
 
     steps:
       - name: Checkout code
@@ -76,6 +76,6 @@ jobs:
       - name: Format Check Results
         if: steps.fmt.outcome == 'failure'
         run: |
-          echo "⚠️ Terraform formatting issues detected in ${{ inputs.module_name }}"
-          echo "Run 'terraform fmt -recursive' to fix formatting"
+          Write-Host "⚠️ Terraform formatting issues detected in ${{ inputs.module_name }}"
+          Write-Host "Run 'terraform fmt -recursive' to fix formatting"
           exit 1

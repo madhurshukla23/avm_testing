@@ -16,7 +16,7 @@ on:
 jobs:
   unit-tests:
     name: Unit Tests - ${{ inputs.module_name }}
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, windows]
 
     steps:
       - name: Checkout code
@@ -39,6 +39,6 @@ jobs:
       - name: Upload Test Results
         if: always()
         run: |
-          echo "### Unit Test Results for ${{ inputs.module_name }}" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "Unit tests executed. Check logs for details." >> $GITHUB_STEP_SUMMARY
+          "### Unit Test Results for ${{ inputs.module_name }}" >> $env:GITHUB_STEP_SUMMARY
+          "" >> $env:GITHUB_STEP_SUMMARY
+          "Unit tests executed. Check logs for details." >> $env:GITHUB_STEP_SUMMARY

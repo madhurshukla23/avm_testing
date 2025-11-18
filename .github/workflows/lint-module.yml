@@ -11,7 +11,7 @@ on:
 jobs:
   tflint:
     name: Lint ${{ inputs.module_name }}
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, windows]
 
     steps:
       - name: Checkout code

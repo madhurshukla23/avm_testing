@@ -33,7 +33,7 @@ jobs:
   # ============================================
   setup:
     name: Setup Module Matrix
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, windows]
     outputs:
       modules: ${{ steps.set-matrix.outputs.modules }}
       examples: ${{ steps.set-matrix.outputs.examples }}
@@ -45,24 +45,26 @@ jobs:
       - name: Read modules configuration
         id: set-matrix
         run: |
-          # Install yq for YAML parsing
-          sudo wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
-          sudo chmod +x /usr/local/bin/yq
+          # Install yq for YAML parsing (Windows)
+          if (-not (Test-Path "$env:TEMP\yq.exe")) {
+            Invoke-WebRequest -Uri "https://github.com/mikefarah/yq/releases/latest/download/yq_windows_amd64.exe" -OutFile "$env:TEMP\yq.exe"
+          }
+          $env:PATH = "$env:TEMP;$env:PATH"
 
           # Extract enabled modules
-          MODULES=$(yq eval '.modules[] | select(.enabled == true) | .name' .github/modules-config.yml | jq -R -s -c 'split("\n") | map(select(length > 0))')
-          echo "modules=$MODULES" >> $GITHUB_OUTPUT
-          echo "Modules to test: $MODULES"
+          $MODULES = (& "$env:TEMP\yq.exe" eval '.modules[] | select(.enabled == true) | .name' .github/modules-config.yml) -split "`n" | Where-Object { $_ } | ConvertTo-Json -Compress
+          echo "modules=$MODULES" >> $env:GITHUB_OUTPUT
+          Write-Host "Modules to test: $MODULES"
 
           # Extract all module-example combinations
-          EXAMPLES=$(yq eval -o=json '.modules[] | select(.enabled == true) | .examples[] as $ex | {"module": .name, "example": $ex}' .github/modules-config.yml | jq -s -c '.')
-          echo "examples=$EXAMPLES" >> $GITHUB_OUTPUT
-          echo "Examples to test: $EXAMPLES"
+          $EXAMPLES = (& "$env:TEMP\yq.exe" eval -o=json '.modules[] | select(.enabled == true) | .examples[] as $ex | {"module": .name, "example": $ex}' .github/modules-config.yml | ConvertFrom-Json | ConvertTo-Json -Compress -AsArray)
+          echo "examples=$EXAMPLES" >> $env:GITHUB_OUTPUT
+          Write-Host "Examples to test: $EXAMPLES"
 
           # Extract modules with unit tests
-          MODULES_WITH_TESTS=$(yq eval '.modules[] | select(.enabled == true and .has_unit_tests == true) | .name' .github/modules-config.yml | jq -R -s -c 'split("\n") | map(select(length > 0))')
-          echo "modules-with-tests=$MODULES_WITH_TESTS" >> $GITHUB_OUTPUT
-          echo "Modules with unit tests: $MODULES_WITH_TESTS"
+          $MODULES_WITH_TESTS = (& "$env:TEMP\yq.exe" eval '.modules[] | select(.enabled == true and .has_unit_tests == true) | .name' .github/modules-config.yml) -split "`n" | Where-Object { $_ } | ConvertTo-Json -Compress
+          echo "modules-with-tests=$MODULES_WITH_TESTS" >> $env:GITHUB_OUTPUT
+          Write-Host "Modules with unit tests: $MODULES_WITH_TESTS"
 
   # ============================================
   # VALIDATE: All modules
@@ -156,7 +158,7 @@ jobs:
   # ============================================
   summary:
     name: Pipeline Summary
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, windows]
     needs: [setup, validate, test-examples, lint, docs, unit-tests]
     if: always()
 
@@ -166,80 +168,82 @@ jobs:
 
       - name: Generate Summary
         run: |
-          # Install yq for YAML parsing
-          sudo wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
-          sudo chmod +x /usr/local/bin/yq
+          # Install yq for YAML parsing (Windows)
+          if (-not (Test-Path "$env:TEMP\yq.exe")) {
+            Invoke-WebRequest -Uri "https://github.com/mikefarah/yq/releases/latest/download/yq_windows_amd64.exe" -OutFile "$env:TEMP\yq.exe"
+          }
+          $env:PATH = "$env:TEMP;$env:PATH"
 
-          echo "## 🚀 Terraform CI Pipeline Summary" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
+          "## 🚀 Terraform CI Pipeline Summary" >> $env:GITHUB_STEP_SUMMARY
+          "" >> $env:GITHUB_STEP_SUMMARY
 
           # Count modules
-          MODULE_COUNT=$(yq eval '.modules[] | select(.enabled == true) | .name' .github/modules-config.yml | wc -l)
-          EXAMPLE_COUNT=$(yq eval '.modules[] | select(.enabled == true) | .examples[]' .github/modules-config.yml | wc -l)
-          TEST_MODULE_COUNT=$(yq eval '.modules[] | select(.enabled == true and .has_unit_tests == true) | .name' .github/modules-config.yml | wc -l)
+          $MODULE_COUNT = @((& "$env:TEMP\yq.exe" eval '.modules[] | select(.enabled == true) | .name' .github/modules-config.yml) -split "`n" | Where-Object { $_ }).Count
+          $EXAMPLE_COUNT = @((& "$env:TEMP\yq.exe" eval '.modules[] | select(.enabled == true) | .examples[]' .github/modules-config.yml) -split "`n" | Where-Object { $_ }).Count
+          $TEST_MODULE_COUNT = @((& "$env:TEMP\yq.exe" eval '.modules[] | select(.enabled == true and .has_unit_tests == true) | .name' .github/modules-config.yml) -split "`n" | Where-Object { $_ }).Count
 
-          echo "### 📊 Coverage" >> $GITHUB_STEP_SUMMARY
-          echo "- **Modules Tested:** $MODULE_COUNT" >> $GITHUB_STEP_SUMMARY
-          echo "- **Examples Tested:** $EXAMPLE_COUNT" >> $GITHUB_STEP_SUMMARY
-          echo "- **Modules with Unit Tests:** $TEST_MODULE_COUNT" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
+          "### 📊 Coverage" >> $env:GITHUB_STEP_SUMMARY
+          "- **Modules Tested:** $MODULE_COUNT" >> $env:GITHUB_STEP_SUMMARY
+          "- **Examples Tested:** $EXAMPLE_COUNT" >> $env:GITHUB_STEP_SUMMARY
+          "- **Modules with Unit Tests:** $TEST_MODULE_COUNT" >> $env:GITHUB_STEP_SUMMARY
+          "" >> $env:GITHUB_STEP_SUMMARY
 
-          echo "### 📦 Module Validation" >> $GITHUB_STEP_SUMMARY
-          if [ "${{ needs.validate.result }}" == "success" ]; then
-            echo "✅ All modules validated successfully" >> $GITHUB_STEP_SUMMARY
-          else
-            echo "❌ Module validation failed" >> $GITHUB_STEP_SUMMARY
-          fi
-          echo "" >> $GITHUB_STEP_SUMMARY
+          "### 📦 Module Validation" >> $env:GITHUB_STEP_SUMMARY
+          if ("${{ needs.validate.result }}" -eq "success") {
+            "✅ All modules validated successfully" >> $env:GITHUB_STEP_SUMMARY
+          } else {
+            "❌ Module validation failed" >> $env:GITHUB_STEP_SUMMARY
+          }
+          "" >> $env:GITHUB_STEP_SUMMARY
 
-          echo "### 🧪 Example Tests" >> $GITHUB_STEP_SUMMARY
-          if [ "${{ needs.test-examples.result }}" == "success" ]; then
-            echo "✅ All $EXAMPLE_COUNT examples passed" >> $GITHUB_STEP_SUMMARY
-          else
-            echo "❌ Some examples failed" >> $GITHUB_STEP_SUMMARY
-          fi
-          echo "" >> $GITHUB_STEP_SUMMARY
+          "### 🧪 Example Tests" >> $env:GITHUB_STEP_SUMMARY
+          if ("${{ needs.test-examples.result }}" -eq "success") {
+            "✅ All $EXAMPLE_COUNT examples passed" >> $env:GITHUB_STEP_SUMMARY
+          } else {
+            "❌ Some examples failed" >> $env:GITHUB_STEP_SUMMARY
+          }
+          "" >> $env:GITHUB_STEP_SUMMARY
 
-          echo "### 🔍 Code Quality (Linting)" >> $GITHUB_STEP_SUMMARY
-          if [ "${{ needs.lint.result }}" == "success" ]; then
-            echo "✅ All modules passed linting" >> $GITHUB_STEP_SUMMARY
-          else
-            echo "❌ Linting failed for some modules" >> $GITHUB_STEP_SUMMARY
-          fi
-          echo "" >> $GITHUB_STEP_SUMMARY
+          "### 🔍 Code Quality (Linting)" >> $env:GITHUB_STEP_SUMMARY
+          if ("${{ needs.lint.result }}" -eq "success") {
+            "✅ All modules passed linting" >> $env:GITHUB_STEP_SUMMARY
+          } else {
+            "❌ Linting failed for some modules" >> $env:GITHUB_STEP_SUMMARY
+          }
+          "" >> $env:GITHUB_STEP_SUMMARY
 
-          echo "### 📚 Documentation" >> $GITHUB_STEP_SUMMARY
-          if [ "${{ needs.docs.result }}" == "success" ]; then
-            echo "✅ Documentation generated for all modules" >> $GITHUB_STEP_SUMMARY
-          else
-            echo "❌ Documentation generation failed" >> $GITHUB_STEP_SUMMARY
-          fi
-          echo "" >> $GITHUB_STEP_SUMMARY
+          "### 📚 Documentation" >> $env:GITHUB_STEP_SUMMARY
+          if ("${{ needs.docs.result }}" -eq "success") {
+            "✅ Documentation generated for all modules" >> $env:GITHUB_STEP_SUMMARY
+          } else {
+            "❌ Documentation generation failed" >> $env:GITHUB_STEP_SUMMARY
+          }
+          "" >> $env:GITHUB_STEP_SUMMARY
 
-          echo "### 🧬 Unit Tests" >> $GITHUB_STEP_SUMMARY
-          if [ "${{ needs.unit-tests.result }}" == "success" ] || [ "${{ needs.unit-tests.result }}" == "skipped" ]; then
-            if [ "$TEST_MODULE_COUNT" -gt 0 ]; then
-              echo "✅ Unit tests passed for $TEST_MODULE_COUNT module(s)" >> $GITHUB_STEP_SUMMARY
-            else
-              echo "ℹ️ No modules with unit tests" >> $GITHUB_STEP_SUMMARY
-            fi
-          else
-            echo "❌ Unit tests failed" >> $GITHUB_STEP_SUMMARY
-          fi
-          echo "" >> $GITHUB_STEP_SUMMARY
+          "### 🧬 Unit Tests" >> $env:GITHUB_STEP_SUMMARY
+          if (("${{ needs.unit-tests.result }}" -eq "success") -or ("${{ needs.unit-tests.result }}" -eq "skipped")) {
+            if ($TEST_MODULE_COUNT -gt 0) {
+              "✅ Unit tests passed for $TEST_MODULE_COUNT module(s)" >> $env:GITHUB_STEP_SUMMARY
+            } else {
+              "ℹ️ No modules with unit tests" >> $env:GITHUB_STEP_SUMMARY
+            }
+          } else {
+            "❌ Unit tests failed" >> $env:GITHUB_STEP_SUMMARY
+          }
+          "" >> $env:GITHUB_STEP_SUMMARY
 
-          echo "---" >> $GITHUB_STEP_SUMMARY
-          echo "### 🎯 Overall Status" >> $GITHUB_STEP_SUMMARY
-          if [ "${{ needs.validate.result }}" == "success" ] && \
-             [ "${{ needs.test-examples.result }}" == "success" ] && \
-             [ "${{ needs.lint.result }}" == "success" ] && \
-             [ "${{ needs.docs.result }}" == "success" ] && \
-             ([ "${{ needs.unit-tests.result }}" == "success" ] || [ "${{ needs.unit-tests.result }}" == "skipped" ]); then
-            echo "### 🎉 All checks passed!" >> $GITHUB_STEP_SUMMARY
-            echo "" >> $GITHUB_STEP_SUMMARY
-            echo "**Tested:** $MODULE_COUNT modules, $EXAMPLE_COUNT examples" >> $GITHUB_STEP_SUMMARY
+          "---" >> $env:GITHUB_STEP_SUMMARY
+          "### 🎯 Overall Status" >> $env:GITHUB_STEP_SUMMARY
+          if (("${{ needs.validate.result }}" -eq "success") -and `
+             ("${{ needs.test-examples.result }}" -eq "success") -and `
+             ("${{ needs.lint.result }}" -eq "success") -and `
+             ("${{ needs.docs.result }}" -eq "success") -and `
+             (("${{ needs.unit-tests.result }}" -eq "success") -or ("${{ needs.unit-tests.result }}" -eq "skipped"))) {
+            "### 🎉 All checks passed!" >> $env:GITHUB_STEP_SUMMARY
+            "" >> $env:GITHUB_STEP_SUMMARY
+            "**Tested:** $MODULE_COUNT modules, $EXAMPLE_COUNT examples" >> $env:GITHUB_STEP_SUMMARY
             exit 0
-          else
-            echo "### ⚠️ Some checks failed - please review above" >> $GITHUB_STEP_SUMMARY
+          } else {
+            "### ⚠️ Some checks failed - please review above" >> $env:GITHUB_STEP_SUMMARY
             exit 1
-          fi
+          }
